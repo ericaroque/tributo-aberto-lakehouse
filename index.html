@@ -1,6 +1,6 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport"
@@ -31,7 +31,8 @@
             font-weight: bold;
         }
 
-        .logo span {
+        .logo span,
+        h1 span {
             color: #39d98a;
         }
 
@@ -45,16 +46,13 @@
         }
 
         .container {
+            width: 100%;
             max-width: 750px;
         }
 
         h1 {
             font-size: clamp(36px, 7vw, 64px);
             margin-bottom: 20px;
-        }
-
-        h1 span {
-            color: #39d98a;
         }
 
         p {
@@ -65,7 +63,7 @@
 
         .btn {
             display: inline-block;
-            margin-top: 30px;
+            margin-top: 20px;
             padding: 18px 35px;
             background: #39d98a;
             color: #071a33;
@@ -78,6 +76,36 @@
 
         .btn:hover {
             background: #28b974;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .manual {
+            margin-top: 35px;
+        }
+
+        .manual input {
+            width: 100%;
+            max-width: 450px;
+            padding: 16px;
+            border: 1px solid #39d98a;
+            border-radius: 10px;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        #reader {
+            width: 100%;
+            max-width: 400px;
+            margin: 25px auto;
+        }
+
+        #resultado {
+            margin-top: 25px;
+            overflow-wrap: anywhere;
         }
 
         .info {
@@ -97,243 +125,203 @@
 
 <body>
 
-    <header>
-        <div class="logo">
-            Tributo<span>360</span>
-        </div>
-    </header>
+<header>
+    <div class="logo">
+        Tributo<span>360</span>
+    </div>
+</header>
 
-    <main>
-        <div class="container">
+<main>
+    <div class="container">
 
-            <h1>
-                Descubra os impostos
-                <span>por trás das suas compras.</span>
-            </h1>
+        <h1>
+            Descubra os impostos
+            <span>por trás das suas compras.</span>
+        </h1>
 
-            <p>
-                Transformamos sua nota fiscal em informação.
+        <p>
+            Transformamos sua nota fiscal em informação.
+            Descubra quanto você paga em tributos
+            estimados e entenda melhor o impacto
+            dos impostos no seu dia a dia.
+        </p>
 
-                Descubra quanto você paga em tributos
-                estimados e entenda melhor o impacto
-                dos impostos no seu dia a dia.
-            </p>
-
-            <button class="btn" type="button" onclick="abrirCamera()">
-                📷 Escanear Nota Fiscal
-            </button>
-            
-            <div id="reader" style="width:100%; max-width:400px; margin:25px auto;"></div>
-      
-<div style="margin-top: 25px;">
-    <p>Ou digite a chave de acesso da nota fiscal</p>
-
-    <input
-        type="text"
-        id="chaveManual"
-        placeholder="Digite os 44 números da chave"
-        maxlength="44"
-        inputmode="numeric"
-        style="
-            width: 100%;
-            max-width: 450px;
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid #39d98a;
-            font-size: 16px;
-            text-align: center;
-        "
-    >
-
-    <button class="btn"
+        <button
+            class="btn"
             type="button"
-            onclick="consultarChaveManual()">
-        Consultar Nota Fiscal
-    </button>
-</div>
-      
-            <p id="resultado"></p>
+            onclick="abrirCamera()">
+            📷 Escanear Nota Fiscal
+        </button>
 
-            <div class="info">
-                Transparência • Educação Fiscal • Tecnologia
+        <div id="reader"></div>
+
+        <div class="manual">
+            <p>Ou digite a chave de acesso da nota fiscal</p>
+
+            <input
+                type="text"
+                id="chaveManual"
+                placeholder="Digite os 44 números da chave"
+                maxlength="44"
+                inputmode="numeric"
+                autocomplete="off"
+            >
+
+            <div>
+                <button
+                    class="btn"
+                    type="button"
+                    onclick="consultarChaveManual()">
+                    Consultar Nota Fiscal
+                </button>
             </div>
-
         </div>
-    </main>
 
-    <footer>
-        Tributo360 © 2026 |
-        Tecnologia para a transparência tributária
-    </footer>
+        <p id="resultado" role="status" aria-live="polite"></p>
+
+        <div class="info">
+            Transparência • Educação Fiscal • Tecnologia
+        </div>
+
+    </div>
+</main>
+
+<footer>
+    Tributo360 © 2026 |
+    Tecnologia para a transparência tributária
+</footer>
+
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
 <script>
     let scanner = null;
+    let lendoQR = false;
 
+    // Função central para as duas formas de consulta
+    function processarNotaFiscal(chave) {
+        const resultado = document.getElementById("resultado");
+
+        if (!/^\d{44}$/.test(chave)) {
+            resultado.textContent =
+                "Chave inválida. Informe exatamente 44 números.";
+            return;
+        }
+
+        resultado.textContent =
+            "Chave validada com sucesso: " + chave +
+            ". Aguardando conexão com o backend.";
+
+        console.log("Chave recebida:", chave);
+
+        // Próxima etapa:
+        // Enviar a chave para o backend seguro,
+        // que acionará o Databricks e a Infosimples.
+    }
+
+    // Digitação manual
+    function consultarChaveManual() {
+        const campo = document.getElementById("chaveManual");
+
+        const chave = campo.value.replace(/\D/g, "");
+
+        processarNotaFiscal(chave);
+    }
+
+    // Leitura pela câmera
     async function abrirCamera() {
         const resultado = document.getElementById("resultado");
 
+        if (scanner) {
+            resultado.textContent = "A câmera já está aberta.";
+            return;
+        }
+
+        if (typeof Html5Qrcode === "undefined") {
+            resultado.textContent =
+                "Não foi possível carregar o leitor de QR Code.";
+            return;
+        }
+
         resultado.textContent = "Abrindo câmera...";
+        lendoQR = false;
 
         try {
-            if (scanner) {
-                await scanner.stop();
-                scanner.clear();
-            }
-
-
-function consultarChaveManual() {
-    const chave = document
-        .getElementById("chaveManual")
-        .value
-        .replace(/\D/g, "");
-
-    if (!/^\d{44}$/.test(chave)) {
-        document.getElementById("resultado").textContent =
-            "A chave deve conter exatamente 44 números.";
-        return;
-    }
-
-    processarNotaFiscal(chave);
-}
-
-async function processarNotaFiscal(chave) {
-    const resultado = document.getElementById("resultado");
-
-    resultado.textContent = "Consultando nota fiscal...";
-
-    try {
-        // Endpoint do backend será configurado aqui.
-        // Não colocar o token da Infosimples no GitHub.
-
-        resultado.textContent =
-            "Chave validada: " + chave +
-            ". Aguardando conexão com o backend.";
-
-    } catch (erro) {
-        console.error(erro);
-        resultado.textContent =
-            "Erro ao consultar a nota fiscal.";
-    }
-}
-
-function processarNotaFiscal(chave) {
-    console.log("Chave recebida:", chave);
-
-    // Próxima etapa:
-    // Enviar a chave ao backend seguro
-    // para consultar a Infosimples via Databricks.
-}
-
             scanner = new Html5Qrcode("reader");
 
             await scanner.start(
                 { facingMode: "environment" },
                 { fps: 10, qrbox: 250 },
+
                 async (texto) => {
-resultado.innerHTML = "";
+                    if (lendoQR) return;
+                    lendoQR = true;
 
-const titulo = document.createElement("p");
-titulo.textContent = "Nota fiscal identificada!";
+                    try {
+                        const url = new URL(texto);
 
-const link = document.createElement("a");
-link.textContent = "Consultar nota na SEFAZ";
-link.target = "_blank";
-link.rel = "noopener noreferrer";
+                        const dominioValido =
+                            url.hostname === "sefaz.es.gov.br" ||
+                            url.hostname.endsWith(".sefaz.es.gov.br");
 
-try {
-    const url = new URL(texto);
+                        if (
+                            !["http:", "https:"].includes(url.protocol) ||
+                            !dominioValido
+                        ) {
+                            throw new Error(
+                                "QR Code não pertence à SEFAZ do ES."
+                            );
+                        }
 
-    const dominioValido =
-        url.hostname === "sefaz.es.gov.br" ||
-        url.hostname.endsWith(".sefaz.es.gov.br");
+                        const parametro = url.searchParams.get("p");
 
-    if (
-        !["http:", "https:"].includes(url.protocol) ||
-        !dominioValido
-    ) {
-        throw new Error("Endereço não reconhecido");
-    }
+                        const chave = parametro
+                            ?.split("|")[0]
+                            ?.trim();
 
-    link.href = url.href;
-    // Extrair a chave de acesso da NFC-e
-const parametro = url.searchParams.get("p");
+                        if (!/^\d{44}$/.test(chave || "")) {
+                            throw new Error(
+                                "Não foi possível extrair a chave de acesso."
+                            );
+                        }
 
-console.log("URL capturada:", url.href);
-console.log("Parâmetro p:", parametro);
+                        document.getElementById("chaveManual").value =
+                            chave;
 
-const chaveAcesso = parametro?.split("|")[0]?.trim();
+                        processarNotaFiscal(chave);
 
-if (!/^\d{44}$/.test(chaveAcesso || "")) {
-    throw new Error("Chave de acesso não encontrada ou inválida");
-}
+                    } catch (erro) {
+                        console.error(erro);
+                        resultado.textContent = erro.message;
 
-console.log("Chave extraída:", chaveAcesso);
-    
-    if (!/^\d{44}$/.test(chaveAcesso || "")) {
-        throw new Error("Chave de acesso inválida");
-    }
-    
-    console.log("Chave extraída:", chaveAcesso);
-    
-    const mensagem = document.createElement("p");
-    mensagem.textContent = "Chave da NFC-e identificada com sucesso!";
-    
-    resultado.appendChild(mensagem);
-    link.style.color = "#39d98a";
-    link.style.fontWeight = "bold";
-    link.style.display = "inline-block";
-    link.style.marginTop = "15px";
+                    } finally {
+                        try {
+                            await scanner.stop();
+                            scanner.clear();
+                        } catch (erro) {
+                            console.error(erro);
+                        }
 
-// Exibir a URL completa
-const urlTexto = document.createElement("p");
-urlTexto.textContent = url.href;
-urlTexto.style.overflowWrap = "anywhere";
-urlTexto.style.fontSize = "14px";
-
-// Botão para copiar a URL
-const botaoCopiar = document.createElement("button");
-botaoCopiar.textContent = "Copiar URL";
-botaoCopiar.className = "btn";
-
-botaoCopiar.onclick = async () => {
-    try {
-        await navigator.clipboard.writeText(url.href);
-        botaoCopiar.textContent = "URL copiada!";
-    } catch (erro) {
-        botaoCopiar.textContent = "Não foi possível copiar";
-    }
-};
-
-// Mostrar os elementos
-resultado.append(
-    titulo,
-    urlTexto,
-    botaoCopiar,
-    link
-);
-
-} catch (erro) {
-    console.error("Erro ao processar QR Code:", erro);
-    resultado.textContent = erro.message;
-}
-
-                    await scanner.stop();
-                    scanner.clear();
-                    scanner = null;
+                        scanner = null;
+                        lendoQR = false;
+                    }
                 },
+
                 () => {}
             );
 
-            resultado.textContent = "Aponte a câmera para o QR Code da nota fiscal.";
+            resultado.textContent =
+                "Aponte a câmera para o QR Code da nota fiscal.";
 
         } catch (erro) {
-            resultado.textContent =
-                "Não foi possível abrir a câmera. Verifique a permissão do navegador.";
-
             console.error(erro);
+
+            resultado.textContent =
+                "Não foi possível abrir a câmera. Verifique as permissões.";
+
+            scanner = null;
         }
     }
 </script>
+
 </body>
 </html>
