@@ -292,11 +292,11 @@ function consultarChaveManual() {
                                 "Não foi possível extrair a chave de acesso."
                             );
                         }
-
-                        document.getElementById("chaveManual").value =
-                            chave;
-
-                        processarNotaFiscal(chave);
+                        
+                        document.getElementById("chaveManual").value = chave;
+                    
+                        resultado.textContent =
+                            "QR Code lido com sucesso! Clique em Consultar Nota Fiscal para continuar.";
 
                     } catch (erro) {
                         console.error(erro);
