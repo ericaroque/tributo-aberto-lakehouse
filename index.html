@@ -185,6 +185,21 @@ try {
     }
 
     link.href = url.href;
+    // Extrair a chave de acesso da NFC-e
+    const parametro = url.searchParams.get("p");
+    
+    const chaveAcesso = parametro?.split("|")[0];
+    
+    if (!/^\d{44}$/.test(chaveAcesso || "")) {
+        throw new Error("Chave de acesso inválida");
+    }
+    
+    console.log("Chave extraída:", chaveAcesso);
+    
+    const mensagem = document.createElement("p");
+    mensagem.textContent = "Chave da NFC-e identificada com sucesso!";
+    
+    resultado.appendChild(mensagem);
     link.style.color = "#39d98a";
     link.style.fontWeight = "bold";
     link.style.display = "inline-block";
