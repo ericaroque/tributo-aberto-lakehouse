@@ -181,24 +181,40 @@
                 scanner.clear();
             }
 
+
 function consultarChaveManual() {
     const chave = document
         .getElementById("chaveManual")
         .value
-        .replace(/\s/g, "");
-
-    const resultado = document.getElementById("resultado");
+        .replace(/\D/g, "");
 
     if (!/^\d{44}$/.test(chave)) {
-        resultado.textContent =
-            "Digite uma chave de acesso válida com 44 números.";
+        document.getElementById("resultado").textContent =
+            "A chave deve conter exatamente 44 números.";
         return;
     }
 
-    resultado.textContent =
-        "Chave identificada! Preparando consulta...";
-
     processarNotaFiscal(chave);
+}
+
+async function processarNotaFiscal(chave) {
+    const resultado = document.getElementById("resultado");
+
+    resultado.textContent = "Consultando nota fiscal...";
+
+    try {
+        // Endpoint do backend será configurado aqui.
+        // Não colocar o token da Infosimples no GitHub.
+
+        resultado.textContent =
+            "Chave validada: " + chave +
+            ". Aguardando conexão com o backend.";
+
+    } catch (erro) {
+        console.error(erro);
+        resultado.textContent =
+            "Erro ao consultar a nota fiscal.";
+    }
 }
 
 function processarNotaFiscal(chave) {
