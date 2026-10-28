@@ -119,9 +119,13 @@
                 dos impostos no seu dia a dia.
             </p>
 
-            <button class="btn" type="button">
-                Escanear Nota Fiscal
+            <button class="btn" type="button" onclick="abrirCamera()">
+                📷 Escanear Nota Fiscal
             </button>
+            
+            <div id="reader" style="width:100%; max-width:400px; margin:25px auto;"></div>
+            
+            <p id="resultado"></p>
 
             <div class="info">
                 Transparência • Educação Fiscal • Tecnologia
@@ -134,6 +138,46 @@
         Tributo360 © 2026 |
         Tecnologia para a transparência tributária
     </footer>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
+<script>
+    let scanner = null;
+
+    async function abrirCamera() {
+        const resultado = document.getElementById("resultado");
+
+        resultado.textContent = "Abrindo câmera...";
+
+        try {
+            if (scanner) {
+                await scanner.stop();
+                scanner.clear();
+            }
+
+            scanner = new Html5Qrcode("reader");
+
+            await scanner.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: 250 },
+                async (texto) => {
+                    resultado.textContent = "QR Code identificado: " + texto;
+
+                    await scanner.stop();
+                    scanner.clear();
+                    scanner = null;
+                },
+                () => {}
+            );
+
+            resultado.textContent = "Aponte a câmera para o QR Code da nota fiscal.";
+
+        } catch (erro) {
+            resultado.textContent =
+                "Não foi possível abrir a câmera. Verifique a permissão do navegador.";
+
+            console.error(erro);
+        }
+    }
+</script>
 </body>
 </html>
