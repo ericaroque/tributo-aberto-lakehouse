@@ -1,25 +1,139 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tributo Aberto</title>
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Tributo360 | Transparência Tributária</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #071a33, #123b59);
+            color: white;
+            min-height: 100vh;
+        }
+
+        header {
+            padding: 25px 8%;
+            border-bottom: 1px solid #ffffff20;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .logo span {
+            color: #39d98a;
+        }
+
+        main {
+            min-height: 75vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 30px 20px;
+        }
+
+        .container {
+            max-width: 750px;
+        }
+
+        h1 {
+            font-size: clamp(36px, 7vw, 64px);
+            margin-bottom: 20px;
+        }
+
+        h1 span {
+            color: #39d98a;
+        }
+
+        p {
+            font-size: 19px;
+            color: #c4d5e5;
+            line-height: 1.7;
+        }
+
+        .btn {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 18px 35px;
+            background: #39d98a;
+            color: #071a33;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #28b974;
+        }
+
+        .info {
+            margin-top: 35px;
+            font-size: 14px;
+            color: #a9bfd1;
+        }
+
+        footer {
+            text-align: center;
+            padding: 25px;
+            color: #a9bfd1;
+            font-size: 13px;
+        }
+    </style>
 </head>
+
 <body>
 
-    <h1>Tributo Aberto</h1>
+    <header>
+        <div class="logo">
+            Tributo<span>360</span>
+        </div>
+    </header>
 
-    <p>
-        Transparência tributária para todos os brasileiros.
-    </p>
+    <main>
+        <div class="container">
 
-    <h2>Consulte os tributos da sua nota fiscal</h2>
+            <h1>
+                Descubra os impostos
+                <span>por trás das suas compras.</span>
+            </h1>
 
-    <p>
-        Em breve, você poderá escanear o QR Code
-        da sua nota fiscal e descobrir os tributos
-        estimados nas suas compras.
-    </p>
+            <p>
+                Transformamos sua nota fiscal em informação.
+
+                Descubra quanto você paga em tributos
+                estimados e entenda melhor o impacto
+                dos impostos no seu dia a dia.
+            </p>
+
+            <button class="btn" type="button">
+                Escanear Nota Fiscal
+            </button>
+
+            <div class="info">
+                Transparência • Educação Fiscal • Tecnologia
+            </div>
+
+        </div>
+    </main>
+
+    <footer>
+        Tributo360 © 2026 |
+        Tecnologia para a transparência tributária
+    </footer>
 
 </body>
 </html>
