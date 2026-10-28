@@ -198,25 +198,48 @@
     let lendoQR = false;
 
     // Função central para as duas formas de consulta
-    function processarNotaFiscal(chave) {
-        const resultado = document.getElementById("resultado");
+    
+async function processarNotaFiscal(chave) {
+    const resultado = document.getElementById("resultado");
 
-        if (!/^\d{44}$/.test(chave)) {
-            resultado.textContent =
-                "Chave inválida. Informe exatamente 44 números.";
-            return;
+    if (!/^\d{44}$/.test(chave)) {
+        resultado.textContent = "Chave inválida.";
+        return;
+    }
+
+    resultado.textContent = "Enviando nota fiscal para processamento...";
+
+    try {
+        const resposta = await fetch(
+            "https://SEU-BACKEND/consultar-nota",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    chave_acesso: chave
+                })
+            }
+        );
+
+        if (!resposta.ok) {
+            throw new Error("Falha ao solicitar consulta");
         }
 
+        const dados = await resposta.json();
+
         resultado.textContent =
-            "Chave validada com sucesso: " + chave +
-            ". Aguardando conexão com o backend.";
+            "Consulta enviada para processamento!";
 
-        console.log("Chave recebida:", chave);
+        console.log("Resposta do backend:", dados);
 
-        // Próxima etapa:
-        // Enviar a chave para o backend seguro,
-        // que acionará o Databricks e a Infosimples.
+    } catch (erro) {
+        console.error(erro);
+        resultado.textContent =
+            "Não foi possível enviar a consulta.";
     }
+}
 
     // Digitação manual
 
