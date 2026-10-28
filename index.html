@@ -239,7 +239,8 @@ function consultarChaveManual() {
     // Leitura pela câmera
     async function abrirCamera() {
         const resultado = document.getElementById("resultado");
-
+        document.getElementById("chaveManual").value = "";
+        resultado.textContent = "";
         if (scanner) {
             resultado.textContent = "A câmera já está aberta.";
             return;
