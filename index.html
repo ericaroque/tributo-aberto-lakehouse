@@ -186,9 +186,18 @@ try {
 
     link.href = url.href;
     // Extrair a chave de acesso da NFC-e
-    const parametro = url.searchParams.get("p");
-    
-    const chaveAcesso = parametro?.split("|")[0];
+const parametro = url.searchParams.get("p");
+
+console.log("URL capturada:", url.href);
+console.log("Parâmetro p:", parametro);
+
+const chaveAcesso = parametro?.split("|")[0]?.trim();
+
+if (!/^\d{44}$/.test(chaveAcesso || "")) {
+    throw new Error("Chave de acesso não encontrada ou inválida");
+}
+
+console.log("Chave extraída:", chaveAcesso);
     
     if (!/^\d{44}$/.test(chaveAcesso || "")) {
         throw new Error("Chave de acesso inválida");
@@ -234,8 +243,8 @@ resultado.append(
 );
 
 } catch (erro) {
-    resultado.textContent =
-        "QR Code identificado, mas não foi possível reconhecer o endereço da SEFAZ.";
+    console.error("Erro ao processar QR Code:", erro);
+    resultado.textContent = erro.message;
 }
 
                     await scanner.stop();
