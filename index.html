@@ -190,7 +190,33 @@ try {
     link.style.display = "inline-block";
     link.style.marginTop = "15px";
 
-    resultado.append(titulo, link);
+// Exibir a URL completa
+const urlTexto = document.createElement("p");
+urlTexto.textContent = url.href;
+urlTexto.style.overflowWrap = "anywhere";
+urlTexto.style.fontSize = "14px";
+
+// Botão para copiar a URL
+const botaoCopiar = document.createElement("button");
+botaoCopiar.textContent = "Copiar URL";
+botaoCopiar.className = "btn";
+
+botaoCopiar.onclick = async () => {
+    try {
+        await navigator.clipboard.writeText(url.href);
+        botaoCopiar.textContent = "URL copiada!";
+    } catch (erro) {
+        botaoCopiar.textContent = "Não foi possível copiar";
+    }
+};
+
+// Mostrar os elementos
+resultado.append(
+    titulo,
+    urlTexto,
+    botaoCopiar,
+    link
+);
 
 } catch (erro) {
     resultado.textContent =
