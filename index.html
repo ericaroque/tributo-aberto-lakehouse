@@ -124,7 +124,34 @@
             </button>
             
             <div id="reader" style="width:100%; max-width:400px; margin:25px auto;"></div>
-            
+      
+<div style="margin-top: 25px;">
+    <p>Ou digite a chave de acesso da nota fiscal</p>
+
+    <input
+        type="text"
+        id="chaveManual"
+        placeholder="Digite os 44 números da chave"
+        maxlength="44"
+        inputmode="numeric"
+        style="
+            width: 100%;
+            max-width: 450px;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #39d98a;
+            font-size: 16px;
+            text-align: center;
+        "
+    >
+
+    <button class="btn"
+            type="button"
+            onclick="consultarChaveManual()">
+        Consultar Nota Fiscal
+    </button>
+</div>
+      
             <p id="resultado"></p>
 
             <div class="info">
@@ -153,6 +180,34 @@
                 await scanner.stop();
                 scanner.clear();
             }
+
+function consultarChaveManual() {
+    const chave = document
+        .getElementById("chaveManual")
+        .value
+        .replace(/\s/g, "");
+
+    const resultado = document.getElementById("resultado");
+
+    if (!/^\d{44}$/.test(chave)) {
+        resultado.textContent =
+            "Digite uma chave de acesso válida com 44 números.";
+        return;
+    }
+
+    resultado.textContent =
+        "Chave identificada! Preparando consulta...";
+
+    processarNotaFiscal(chave);
+}
+
+function processarNotaFiscal(chave) {
+    console.log("Chave recebida:", chave);
+
+    // Próxima etapa:
+    // Enviar a chave ao backend seguro
+    // para consultar a Infosimples via Databricks.
+}
 
             scanner = new Html5Qrcode("reader");
 
