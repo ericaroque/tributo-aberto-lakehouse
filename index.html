@@ -219,13 +219,22 @@
     }
 
     // Digitação manual
-    function consultarChaveManual() {
-        const campo = document.getElementById("chaveManual");
 
-        const chave = campo.value.replace(/\D/g, "");
+function consultarChaveManual() {
+    const campo = document.getElementById("chaveManual");
+    const chave = campo.value.replace(/\D/g, "");
 
-        processarNotaFiscal(chave);
+    if (!/^\d{44}$/.test(chave)) {
+        document.getElementById("resultado").textContent =
+            "Chave inválida. Informe exatamente 44 números.";
+        return;
     }
+
+    processarNotaFiscal(chave);
+
+    // Limpar o campo após validar a chave
+    campo.value = "";
+}
 
     // Leitura pela câmera
     async function abrirCamera() {
