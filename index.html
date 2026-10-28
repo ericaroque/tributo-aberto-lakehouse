@@ -160,7 +160,42 @@
                 { facingMode: "environment" },
                 { fps: 10, qrbox: 250 },
                 async (texto) => {
-                    resultado.textContent = "QR Code identificado: " + texto;
+resultado.innerHTML = "";
+
+const titulo = document.createElement("p");
+titulo.textContent = "Nota fiscal identificada!";
+
+const link = document.createElement("a");
+link.textContent = "Consultar nota na SEFAZ";
+link.target = "_blank";
+link.rel = "noopener noreferrer";
+
+try {
+    const url = new URL(texto);
+
+    const dominioValido =
+        url.hostname === "sefaz.es.gov.br" ||
+        url.hostname.endsWith(".sefaz.es.gov.br");
+
+    if (
+        !["http:", "https:"].includes(url.protocol) ||
+        !dominioValido
+    ) {
+        throw new Error("Endereço não reconhecido");
+    }
+
+    link.href = url.href;
+    link.style.color = "#39d98a";
+    link.style.fontWeight = "bold";
+    link.style.display = "inline-block";
+    link.style.marginTop = "15px";
+
+    resultado.append(titulo, link);
+
+} catch (erro) {
+    resultado.textContent =
+        "QR Code identificado, mas não foi possível reconhecer o endereço da SEFAZ.";
+}
 
                     await scanner.stop();
                     scanner.clear();
