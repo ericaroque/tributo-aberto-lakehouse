@@ -108,6 +108,83 @@
             overflow-wrap: anywhere;
         }
 
+        /* Painel com os valores da nota fiscal */
+
+        #painelNota {
+            display: none;
+            margin-top: 35px;
+            padding: 25px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(57, 217, 138, 0.35);
+            border-radius: 18px;
+            text-align: left;
+        }
+
+        #painelNota h2 {
+            margin-top: 0;
+            font-size: 24px;
+            color: #ffffff;
+        }
+
+        .resumoValores {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .valorCard {
+            background: #173d56;
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .valorCard .descricao {
+            display: block;
+            color: #c4d5e5;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .valorCard .valor {
+            display: block;
+            font-size: 30px;
+            font-weight: bold;
+        }
+
+        .valorCard .tributo {
+            color: #39d98a;
+        }
+
+        .percentual {
+            margin-top: 25px;
+            color: #c4d5e5;
+            font-size: 16px;
+        }
+
+        .barraFundo {
+            width: 100%;
+            height: 12px;
+            background: #315369;
+            border-radius: 20px;
+            overflow: hidden;
+            margin-top: 12px;
+        }
+
+        #barraTributos {
+            width: 0%;
+            height: 100%;
+            background: #39d98a;
+            border-radius: 20px;
+            transition: width 0.4s ease;
+        }
+
+        .observacao {
+            margin-top: 20px;
+            font-size: 13px;
+            color: #a9bfd1;
+        }
+
         .info {
             margin-top: 35px;
             font-size: 14px;
@@ -119,6 +196,12 @@
             padding: 25px;
             color: #a9bfd1;
             font-size: 13px;
+        }
+
+        @media (max-width: 500px) {
+            .resumoValores {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -171,13 +254,62 @@
                 <button
                     class="btn"
                     type="button"
+                    id="btnConsultar"
                     onclick="consultarChaveManual()">
                     Consultar Nota Fiscal
                 </button>
             </div>
         </div>
 
-        <p id="resultado" role="status" aria-live="polite"></p>
+        <p id="resultado"
+           role="status"
+           aria-live="polite"></p>
+
+        <!-- Resultado da consulta -->
+
+        <section id="painelNota" aria-label="Resumo da nota fiscal">
+
+            <h2>Resumo da sua nota fiscal</h2>
+
+            <div class="resumoValores">
+
+                <div class="valorCard">
+                    <span class="descricao">
+                        Valor total da compra
+                    </span>
+
+                    <span class="valor" id="valorCompra">
+                        —
+                    </span>
+                </div>
+
+                <div class="valorCard">
+                    <span class="descricao">
+                        Tributos informados
+                    </span>
+
+                    <span class="valor tributo" id="valorTributos">
+                        —
+                    </span>
+                </div>
+
+            </div>
+
+            <div class="percentual">
+                Percentual de tributos:
+                <strong id="percentualTributos">—</strong>
+
+                <div class="barraFundo">
+                    <div id="barraTributos"></div>
+                </div>
+            </div>
+
+            <div class="observacao">
+                Os valores de tributos são os informados
+                na nota fiscal e podem representar estimativas.
+            </div>
+
+        </section>
 
         <div class="info">
             Transparência • Educação Fiscal • Tecnologia
@@ -197,73 +329,170 @@
     let scanner = null;
     let lendoQR = false;
 
-    // Função central para as duas formas de consulta
-    
-async function processarNotaFiscal(chave) {
-    const resultado = document.getElementById("resultado");
+    // Substituir pela URL real do serviço no Render.
+    const BACKEND_URL = "https://SEU-SERVICO.onrender.com";
 
-    if (!/^\d{44}$/.test(chave)) {
-        resultado.textContent = "Chave inválida.";
-        return;
+    // Formatação de valores em reais.
+
+    function formatarMoeda(valor) {
+        return new Intl.NumberFormat("pt-BR", {
+            style: "currency",
+            currency: "BRL"
+        }).format(valor);
     }
 
-    resultado.textContent = "Enviando nota fiscal para processamento...";
+    // Limpa o painel antes de uma nova consulta.
 
-    try {
-        const resposta = await fetch(
-            "https://SEU-BACKEND/consultar-nota",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    chave_acesso: chave
-                })
-            }
-        );
+    function limparPainel() {
+        document.getElementById("painelNota").style.display = "none";
+        document.getElementById("valorCompra").textContent = "—";
+        document.getElementById("valorTributos").textContent = "—";
+        document.getElementById("percentualTributos").textContent = "—";
+        document.getElementById("barraTributos").style.width = "0%";
+    }
 
-        if (!resposta.ok) {
-            throw new Error("Falha ao solicitar consulta");
+    // Exibe valores quando o backend devolver o resultado.
+
+    function mostrarResumoNota(nota) {
+        const valorCompra = Number(nota.normalizado_valor_a_pagar);
+        const valorTributos = Number(nota.normalizado_tributos_totais);
+
+        if (
+            nota.normalizado_valor_a_pagar == null ||
+            nota.normalizado_tributos_totais == null ||
+            !Number.isFinite(valorCompra) ||
+            !Number.isFinite(valorTributos) ||
+            valorCompra <= 0 ||
+            valorTributos < 0
+        ) {
+            throw new Error(
+                "A nota não contém valores válidos para o resumo."
+            );
         }
 
-        const dados = await resposta.json();
+        const percentual = (valorTributos / valorCompra) * 100;
 
-        resultado.textContent =
-            "Consulta enviada para processamento!";
+        document.getElementById("valorCompra").textContent =
+            formatarMoeda(valorCompra);
 
-        console.log("Resposta do backend:", dados);
+        document.getElementById("valorTributos").textContent =
+            formatarMoeda(valorTributos);
 
-    } catch (erro) {
-        console.error(erro);
-        resultado.textContent =
-            "Não foi possível enviar a consulta.";
-    }
-}
+        document.getElementById("percentualTributos").textContent =
+            percentual.toLocaleString("pt-BR", {
+                maximumFractionDigits: 2
+            }) + "%";
 
-    // Digitação manual
+        document.getElementById("barraTributos").style.width =
+            Math.min(percentual, 100) + "%";
 
-function consultarChaveManual() {
-    const campo = document.getElementById("chaveManual");
-    const chave = campo.value.replace(/\D/g, "");
-
-    if (!/^\d{44}$/.test(chave)) {
-        document.getElementById("resultado").textContent =
-            "Chave inválida. Informe exatamente 44 números.";
-        return;
+        document.getElementById("painelNota").style.display = "block";
     }
 
-    processarNotaFiscal(chave);
+    // Envia a chave de acesso para o backend.
 
-    // Limpar o campo após validar a chave
-    campo.value = "";
-}
+    async function processarNotaFiscal(chave) {
+        const resultado = document.getElementById("resultado");
+        const botao = document.getElementById("btnConsultar");
 
-    // Leitura pela câmera
+        limparPainel();
+
+        if (!/^\d{44}$/.test(chave)) {
+            resultado.textContent =
+                "Chave inválida. Informe exatamente 44 números.";
+            return;
+        }
+
+        botao.disabled = true;
+        resultado.textContent =
+            "Enviando nota fiscal para processamento...";
+
+        try {
+            const resposta = await fetch(
+                `${BACKEND_URL}/consultar-nota`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        chave_acesso: chave
+                    })
+                }
+            );
+
+            if (!resposta.ok) {
+                throw new Error(
+                    "Falha ao solicitar consulta. Código: " +
+                    resposta.status
+                );
+            }
+
+            const dados = await resposta.json();
+
+            console.log("Resposta do backend:", dados);
+
+            // Caso o backend já devolva os valores.
+            if (dados.nota) {
+                mostrarResumoNota(dados.nota);
+
+                resultado.textContent =
+                    "Consulta realizada com sucesso!";
+
+            } else if (
+                dados.status === "submitted" ||
+                dados.run_id
+            ) {
+                // O Job foi iniciado, mas ainda não terminou.
+                resultado.textContent =
+                    "Consulta enviada ao Databricks. " +
+                    "Aguardando implementação do retorno dos valores.";
+
+            } else {
+                resultado.textContent =
+                    "Consulta recebida. Resultado ainda não disponível.";
+            }
+
+        } catch (erro) {
+            console.error(erro);
+
+            resultado.textContent =
+                "Não foi possível concluir a consulta: " +
+                erro.message;
+
+        } finally {
+            botao.disabled = false;
+        }
+    }
+
+    // Consulta pela digitação manual.
+
+    function consultarChaveManual() {
+        const campo = document.getElementById("chaveManual");
+        const chave = campo.value.replace(/\D/g, "");
+
+        if (!/^\d{44}$/.test(chave)) {
+            document.getElementById("resultado").textContent =
+                "Chave inválida. Informe exatamente 44 números.";
+            return;
+        }
+
+        processarNotaFiscal(chave);
+
+        // Limpa o campo após validar a chave.
+        campo.value = "";
+    }
+
+    // Leitura pela câmera.
+
     async function abrirCamera() {
         const resultado = document.getElementById("resultado");
+
         document.getElementById("chaveManual").value = "";
         resultado.textContent = "";
+
+        limparPainel();
+
         if (scanner) {
             resultado.textContent = "A câmera já está aberta.";
             return;
@@ -316,9 +545,16 @@ function consultarChaveManual() {
                                 "Não foi possível extrair a chave de acesso."
                             );
                         }
-                        
-                        document.getElementById("chaveManual").value = chave;
-                    
+
+                        // Preenche o campo.
+                        // A consulta ocorre somente após clicar no botão.
+
+                        document.getElementById("chaveManual").value =
+                            chave;
+
+                        resultado.textContent =
+                            "QR Code lido com sucesso. " +
+                            "Clique em Consultar Nota Fiscal.";
 
                     } catch (erro) {
                         console.error(erro);
@@ -347,7 +583,8 @@ function consultarChaveManual() {
             console.error(erro);
 
             resultado.textContent =
-                "Não foi possível abrir a câmera. Verifique as permissões.";
+                "Não foi possível abrir a câmera. " +
+                "Verifique as permissões.";
 
             scanner = null;
         }
