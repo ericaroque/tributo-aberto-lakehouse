@@ -1,29 +1,35 @@
-
 import os
 import re
 import requests
 
-from fastapi import FastAPI, HTTPException, Header, Request
+from collections import defaultdict
+from threading import Lock
+from time import monotonic
+
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from collections import defaultdict
-from time import monotonic
-from threading import Lock
+
 
 app = FastAPI(title="Tributo360 API")
 
+# Segurança: consultas desabilitadas por padrão
+CONSULTAS_HABILITADAS = (
+    os.getenv("CONSULTAS_HABILITADAS", "false").lower() == "true"
+)
+
+# Limite provisório por IP
 LIMITE_CONSULTAS = 3
 JANELA_SEGUNDOS = 3600
 
 historico_consultas = defaultdict(list)
 controle_lock = Lock()
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://ericaroque.github.io"
-    ],
-    allow_methods=["POST", "GET"],
-    allow_headers=["Content-Type", "X-Access-Key"],
+    allow_origins=["https://ericaroque.github.io"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
 )
 
 DATABRICKS_HOST = (
@@ -35,6 +41,7 @@ JOB_ID = 487951552436515
 
 class NotaFiscal(BaseModel):
     chave_acesso: str
+    turnstile_token: str
 
 
 @app.get("/health")
@@ -45,25 +52,63 @@ def health():
 @app.post("/consultar-nota")
 def consultar_nota(
     nota: NotaFiscal,
-    request: Request,
-    x_access_key: str | None = Header(default=None)
+    request: Request
 ):
-    # Controle inicial de acesso para testes privados
-    access_key = os.environ["TRIBUTO360_ACCESS_KEY"]
 
-    if x_access_key != access_key:
+    # 1. Bloquear consultas pagas por padrão
+    if not CONSULTAS_HABILITADAS:
         raise HTTPException(
-            status_code=401,
-            detail="Acesso não autorizado"
+            status_code=503,
+            detail="Consultas temporariamente desabilitadas."
         )
 
+    # 2. Validar a chave da nota fiscal
     chave = nota.chave_acesso.strip()
 
     if not re.fullmatch(r"\d{44}", chave):
         raise HTTPException(
             status_code=400,
-            detail="Chave inválida"
+            detail="Chave inválida."
         )
+
+    # 3. Exigir token do Cloudflare
+    if not nota.turnstile_token.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Token de segurança não informado."
+        )
+
+    # 4. Validar Turnstile no servidor
+    try:
+        verificacao = requests.post(
+            "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+            data={
+                "secret": os.environ["TURNSTILE_SECRET_KEY"],
+                "response": nota.turnstile_token
+            },
+            timeout=10
+        )
+
+        verificacao.raise_for_status()
+        resultado_turnstile = verificacao.json()
+
+    except (requests.RequestException, ValueError):
+        raise HTTPException(
+            status_code=503,
+            detail="Falha na verificação de segurança."
+        )
+
+    if (
+        resultado_turnstile.get("success") is not True
+        or resultado_turnstile.get("hostname")
+        != "ericaroque.github.io"
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="Verificação de segurança inválida."
+        )
+
+    # 5. Limite provisório por IP
     ip = request.client.host if request.client else "desconhecido"
     agora = monotonic()
 
@@ -81,6 +126,8 @@ def consultar_nota(
             )
 
         historico_consultas[ip].append(agora)
+
+    # 6. Acionar Databricks
     token = os.environ["DATABRICKS_TOKEN"]
 
     try:
@@ -108,5 +155,5 @@ def consultar_nota(
     except requests.RequestException:
         raise HTTPException(
             status_code=502,
-            detail="Falha ao acionar o Databricks"
+            detail="Falha ao acionar o Databricks."
         )
