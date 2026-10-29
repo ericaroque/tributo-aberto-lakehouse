@@ -204,6 +204,11 @@
             }
         }
     </style>
+    <script
+    src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+    async
+    defer>
+</script>
 </head>
 
 <body>
@@ -249,7 +254,9 @@
                 inputmode="numeric"
                 autocomplete="off"
             >
-
+            <div class="cf-turnstile"
+                data-sitekey="0x4AAAAAAFrm1mJ3eE5YCpHk">
+            </div>
             <div>
                 <button
                     class="btn"
@@ -408,6 +415,12 @@
             "Enviando nota fiscal para processamento...";
 
         try {
+            const tokenTurnstile = document.querySelector('[name="cf-turnstile-response"]')?.value;       
+            if (!tokenTurnstile) {
+                    throw new Error(
+                            "Conclua a verificação de segurança antes de consultar."
+                        );
+            }
             const resposta = await fetch(
                 `${BACKEND_URL}/consultar-nota`,
                 {
@@ -416,7 +429,8 @@
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        chave_acesso: chave
+                        chave_acesso: chave,
+                        turnstile_token: tokenTurnstile
                     })
                 }
             );
